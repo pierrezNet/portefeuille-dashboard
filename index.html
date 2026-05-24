@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#000091">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Suivi Portefeuille</title>
+    <style>:root {
+  --bleu-france: #000091;
+  --bleu-france-light: #6a6af4;
+  --gris-fond: #f6f6f6;
+  --gris-bordure: #ddd;
+  --gris-texte: #161616;
+  --gris-muet: #666;
+  --vert: #18753c;
+  --rouge: #ce0500;
+  --jaune: #fcc63a;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--gris-texte);
+  background: var(--gris-fond);
+  -webkit-font-smoothing: antialiased;
+}
+.container { max-width: 720px; margin: 0 auto; padding: 0 0.85rem; }
+
+header.topbar {
+  background: var(--bleu-france);
+  color: #fff;
+  padding: 0.85rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+header.topbar .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+header.topbar h1 { margin: 0; font-size: 1.05rem; font-weight: 700; }
+header.topbar small { font-size: 0.78rem; opacity: 0.85; }
+
+section { margin: 1rem 0; }
+h2 { font-size: 1rem; margin: 0 0 0.5rem; letter-spacing: 0.02em; }
+
+.muted { color: var(--gris-muet); }
+.pv-positive { color: var(--vert); font-weight: 600; }
+.pv-negative { color: var(--rouge); font-weight: 600; }
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+.kpi {
+  background: #fff;
+  border: 1px solid var(--gris-bordure);
+  border-left: 4px solid var(--bleu-france);
+  border-radius: 4px;
+  padding: 0.55rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+}
+.kpi-label {
+  font-size: 0.72rem;
+  color: var(--gris-muet);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.kpi-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--bleu-france);
+  margin-top: 0.15rem;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-cash { grid-column: 1 / -1; }
+.kpi-cash .kpi-value { font-size: 1.55rem; }
+
+@media (min-width: 600px) {
+  .kpis { grid-template-columns: repeat(5, 1fr); }
+  .kpi-cash { grid-column: auto; }
+  .kpi-cash .kpi-value { font-size: 1.2rem; }
+}
+
+.compte-card {
+  background: #fff;
+  border: 1px solid var(--gris-bordure);
+  border-radius: 4px;
+  margin-bottom: 0.85rem;
+  overflow: hidden;
+}
+.compte-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 0.85rem;
+  border-bottom: 1px solid var(--gris-bordure);
+  background: var(--gris-fond);
+}
+.compte-card-header strong { font-size: 1rem; }
+.compte-card-header .solde { font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  background: var(--bleu-france);
+  color: #fff;
+  padding: 0.1rem 0.45rem;
+  border-radius: 3px;
+  margin-right: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.badge-cto { background: #6e2782; }
+.badge-pea { background: var(--bleu-france); }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+th, td {
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid var(--gris-bordure);
+}
+tr:last-child td { border-bottom: none; }
+th {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--gris-muet);
+  font-weight: 600;
+}
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+code {
+  background: var(--gris-fond);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.88em;
+}
+
+.bloc {
+  background: #fff;
+  border: 1px solid var(--gris-bordure);
+  border-radius: 4px;
+  padding: 0.7rem 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.agenda { list-style: none; padding: 0; margin: 0; }
+.agenda li {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 0.7rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--gris-bordure);
+}
+.agenda li:last-child { border-bottom: none; }
+.agenda .date strong { display: block; font-size: 0.95rem; }
+.agenda .date small { font-size: 0.74rem; color: var(--gris-muet); }
+.agenda .corps small { display: block; color: var(--gris-muet); font-size: 0.82rem; margin-top: 0.15rem; }
+.type-libelle {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--gris-muet);
+  margin-right: 0.4rem;
+  letter-spacing: 0.03em;
+}
+
+.watchlist-aside { list-style: none; padding: 0; margin: 0; }
+.watchlist-aside li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--gris-bordure);
+}
+.watchlist-aside li:last-child { border-bottom: none; }
+.watchlist-aside .nom { font-weight: 600; }
+.watchlist-aside small { display: block; color: var(--gris-muet); font-size: 0.82rem; margin-top: 0.15rem; }
+
+footer.bas-page {
+  margin: 2rem 0 1rem;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--gris-muet);
+}
+
+.aucun { color: var(--gris-muet); font-style: italic; }
+
+
+/* Modale mot de passe */
+.modale-fond {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modale {
+  background: #fff;
+  padding: 1.5rem 1.25rem;
+  border-radius: 6px;
+  width: min(90vw, 380px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.modale h2 { margin: 0 0 0.5rem; font-size: 1.1rem; }
+.modale label { display: block; margin-top: 0.85rem; font-size: 0.85rem; color: var(--gris-muet); }
+.modale input[type="password"] {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  font-size: 1rem;
+  border: 1px solid var(--gris-bordure);
+  border-radius: 4px;
+  margin-top: 0.25rem;
+  box-sizing: border-box;
+}
+.modale .ligne-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.7rem;
+  font-size: 0.85rem;
+  color: var(--gris-texte);
+}
+.modale button {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.7rem;
+  background: var(--bleu-france);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.modale button:hover { background: #1212a8; }
+.modale .erreur {
+  color: var(--rouge);
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  display: none;
+}
+.modale .erreur.visible { display: block; }
+.btn-recharger {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.4);
+  color: #fff;
+  padding: 0.25rem 0.6rem;
+  border-radius: 3px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.btn-recharger:hover { background: rgba(255,255,255,0.15); }
+    </style>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="container">
+        <h1>💼 Suivi Portefeuille</h1>
+        <span style="display:flex;gap:0.5rem;align-items:center">
+          <small id="genere-le">—</small>
+          <button class="btn-recharger" id="btn-recharger" title="Forcer le rechargement des données">🔄</button>
+          <button class="btn-recharger" id="btn-oublier" title="Effacer le mot de passe mémorisé">🔑</button>
+        </span>
+      </div>
+    </header>
+    <main class="container" id="app">
+      <p>Chargement…</p>
+    </main>
+    <footer class="bas-page">
+      <div class="container">
+        <small>Lecture seule · Données chiffrées · 100&nbsp;% client-side</small>
+      </div>
+    </footer>
+
+    <div class="modale-fond" id="modale-fond" style="display:none">
+      <form class="modale" id="modale-form">
+        <h2>🔒 Mot de passe</h2>
+        <p style="margin:0;font-size:0.88rem;color:var(--gris-muet)">
+          Saisis le mot de passe utilisé lors de la publication pour déchiffrer les données.
+        </p>
+        <label>Mot de passe
+          <input type="password" id="mdp" autocomplete="current-password" required minlength="8">
+        </label>
+        <div class="ligne-checkbox">
+          <input type="checkbox" id="memoriser" checked>
+          <label for="memoriser" style="margin:0">Mémoriser sur cet appareil</label>
+        </div>
+        <button type="submit">Déchiffrer</button>
+        <div class="erreur" id="erreur-mdp">Mot de passe incorrect.</div>
+      </form>
+    </div>
+
+    <script>(function () {
+  "use strict";
+
+  const LS_KEY_MDP = "suivi-portefeuille:mdp";
+  const URL_DATA = "data.enc.json";
+
+  // --- Crypto helpers (compatible chiffrement Python AES-256-GCM/PBKDF2) ----
+  function b64ToBytes(b64) {
+    const bin = atob(b64);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  async function deriverCle(motPasse, salt, iterations) {
+    const enc = new TextEncoder();
+    const baseKey = await crypto.subtle.importKey(
+      "raw",
+      enc.encode(motPasse),
+      { name: "PBKDF2" },
+      false,
+      ["deriveKey"]
+    );
+    return crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt: salt,
+        iterations: iterations,
+        hash: "SHA-256",
+      },
+      baseKey,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["decrypt"]
+    );
+  }
+
+  async function dechiffrer(paquet, motPasse) {
+    if (paquet.v !== 1) throw new Error("Version inconnue : " + paquet.v);
+    const salt = b64ToBytes(paquet.salt);
+    const iv = b64ToBytes(paquet.iv);
+    const ct = b64ToBytes(paquet.ct);
+    const cle = await deriverCle(motPasse, salt, paquet.iter || 200000);
+    const clair = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: iv },
+      cle,
+      ct
+    );
+    const texte = new TextDecoder("utf-8").decode(clair);
+    return JSON.parse(texte);
+  }
+
+  // --- Helpers de formatage (alignés sur dashboard_mobile.js) ---------------
+  function fmtEuros(valeur) {
+    if (valeur === null || valeur === undefined || valeur === "") return "—";
+    const n = Number(valeur);
+    if (Number.isNaN(n)) return String(valeur);
+    const signe = n < 0 ? "-" : "";
+    const abs = Math.abs(n);
+    const entier = Math.floor(abs);
+    const dec = Math.round((abs - entier) * 100).toString().padStart(2, "0");
+    const entierFmt = entier.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    return `${signe}${entierFmt},${dec} €`;
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return "";
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+    return m ? `${m[3]}/${m[2]}/${m[1]}` : iso;
+  }
+
+  function joursAvant(iso) {
+    if (!iso) return null;
+    const d = new Date(iso + "T00:00:00");
+    if (isNaN(d.getTime())) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Math.round((d - today) / 86400000);
+  }
+
+  function texteJours(n) {
+    if (n === 0) return "aujourd'hui";
+    if (n === 1) return "demain";
+    if (n > 1) return `dans ${n} j`;
+    return `${-n} j passé(s)`;
+  }
+
+  function escapeHtml(s) {
+    if (s == null) return "";
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  // --- Rendu (identique à dashboard_mobile.js) ------------------------------
+  function renderKpis(data) {
+    const stats = data.stats_annee || {};
+    const a = data.annee_courante;
+    const pv = Number(stats.plus_values_realisees || 0);
+    const pvClass = pv > 0 ? "pv-positive" : pv < 0 ? "pv-negative" : "";
+    return `
+      <section class="kpis">
+        <div class="kpi kpi-cash">
+          <span class="kpi-label">Cash total</span>
+          <span class="kpi-value">${fmtEuros(data.total_cash)}</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label">Investi ${a}</span>
+          <span class="kpi-value">${fmtEuros(stats.montant_investi)}</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label">PV ${a}</span>
+          <span class="kpi-value ${pvClass}">${fmtEuros(pv)}</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label">Dividendes ${a}</span>
+          <span class="kpi-value">${fmtEuros(stats.dividendes_recus_eur)}</span>
+        </div>
+        <div class="kpi">
+          <span class="kpi-label">Frais ${a}</span>
+          <span class="kpi-value">${fmtEuros(stats.frais_courtage_total)}</span>
+        </div>
+      </section>
+    `;
+  }
+
+  function renderComptes(data) {
+    if (!data.comptes || data.comptes.length === 0) return "";
+    return data.comptes
+      .map((vue) => {
+        const c = vue.compte;
+        const typeBadge = (c.type || "").toLowerCase();
+        const positionsRows =
+          vue.positions && vue.positions.length
+            ? `<table>
+                 <thead>
+                   <tr><th>Ticker</th><th>Nom</th><th class="num">Qté</th><th class="num">PRU</th></tr>
+                 </thead>
+                 <tbody>
+                   ${vue.positions
+                     .map(
+                       (p) =>
+                         `<tr>
+                            <td><code>${escapeHtml(p.ticker)}</code></td>
+                            <td>${escapeHtml(p.nom)}</td>
+                            <td class="num">${escapeHtml(p.quantite)}</td>
+                            <td class="num">${
+                              p.pru ? fmtEuros(p.pru) : "—"
+                            }</td>
+                          </tr>`
+                     )
+                     .join("")}
+                 </tbody>
+               </table>`
+            : `<p class="aucun" style="padding:0.7rem 0.85rem">Aucune position en cours.</p>`;
+        return `
+          <article class="compte-card">
+            <header class="compte-card-header">
+              <div>
+                <span class="badge badge-${typeBadge}">${escapeHtml(c.type || "")}</span>
+                <strong>${escapeHtml(c.nom)}</strong>
+              </div>
+              <span class="solde">${fmtEuros(vue.solde_cash)}</span>
+            </header>
+            ${positionsRows}
+          </article>
+        `;
+      })
+      .join("");
+  }
+
+  function renderAgenda(data) {
+    if (!data.agenda || data.agenda.length === 0) {
+      return `<section class="bloc"><h2>📅 Agenda ${data.agenda_horizon_jours} jours</h2><p class="aucun">Rien à venir.</p></section>`;
+    }
+    const items = data.agenda
+      .map((it) => {
+        const n = joursAvant(it.date);
+        const restant = n !== null ? `<small>${texteJours(n)}</small>` : "";
+        const ticker = it.ticker ? ` <code>${escapeHtml(it.ticker)}</code>` : "";
+        const notes = it.notes ? `<small>${escapeHtml(it.notes)}</small>` : "";
+        return `
+          <li>
+            <div class="date">
+              <strong>${fmtDate(it.date)}</strong>
+              ${restant}
+            </div>
+            <div class="corps">
+              <span class="type-libelle">${escapeHtml(it.type_libelle)}</span>${ticker}
+              <div>${escapeHtml(it.libelle)}</div>
+              ${notes}
+            </div>
+          </li>
+        `;
+      })
+      .join("");
+    return `
+      <section class="bloc">
+        <h2>📅 Agenda ${data.agenda_horizon_jours} jours</h2>
+        <ul class="agenda">${items}</ul>
+      </section>
+    `;
+  }
+
+  function renderWatchlist(data) {
+    if (!data.watchlist_haute || data.watchlist_haute.length === 0) return "";
+    const items = data.watchlist_haute
+      .map((w) => {
+        const ticker = w.ticker ? `<code>${escapeHtml(w.ticker)}</code> ` : "";
+        const these = w.these_lt ? `<small>${escapeHtml(w.these_lt)}</small>` : "";
+        return `<li><span class="nom">${ticker}${escapeHtml(w.nom || w.ticker || "—")}</span>${these}</li>`;
+      })
+      .join("");
+    return `
+      <section class="bloc">
+        <h2>🎯 Watchlist priorité haute</h2>
+        <ul class="watchlist-aside">${items}</ul>
+      </section>
+    `;
+  }
+
+  function afficher(data) {
+    document.getElementById("genere-le").textContent =
+      "Synchronisé le " + (data.genere_le_fr || "—");
+    document.getElementById("app").innerHTML =
+      renderKpis(data) +
+      `<section><h2>Comptes</h2>${renderComptes(data)}</section>` +
+      renderAgenda(data) +
+      renderWatchlist(data);
+  }
+
+  // --- Flux principal -------------------------------------------------------
+  let paquetGlobal = null;
+
+  function ouvrirModale(messageErreur) {
+    const fond = document.getElementById("modale-fond");
+    const err = document.getElementById("erreur-mdp");
+    fond.style.display = "flex";
+    if (messageErreur) {
+      err.textContent = messageErreur;
+      err.classList.add("visible");
+    } else {
+      err.classList.remove("visible");
+    }
+    setTimeout(() => document.getElementById("mdp").focus(), 50);
+  }
+
+  function fermerModale() {
+    document.getElementById("modale-fond").style.display = "none";
+  }
+
+  async function tenterDechiffrement(mdp, memoriser) {
+    try {
+      const data = await dechiffrer(paquetGlobal, mdp);
+      if (memoriser) {
+        localStorage.setItem(LS_KEY_MDP, mdp);
+      }
+      fermerModale();
+      afficher(data);
+    } catch (e) {
+      console.warn("Échec déchiffrement", e);
+      localStorage.removeItem(LS_KEY_MDP);
+      ouvrirModale("Mot de passe incorrect.");
+    }
+  }
+
+  async function init() {
+    document.getElementById("app").innerHTML = "<p>Chargement des données chiffrées…</p>";
+    try {
+      const reponse = await fetch(URL_DATA + "?t=" + Date.now(), {
+        cache: "no-store",
+      });
+      if (!reponse.ok) throw new Error("HTTP " + reponse.status);
+      paquetGlobal = await reponse.json();
+    } catch (e) {
+      document.getElementById("app").innerHTML =
+        `<p style="color:var(--rouge)">Impossible de charger les données : ${escapeHtml(e.message)}</p>`;
+      return;
+    }
+
+    const mdpMemo = localStorage.getItem(LS_KEY_MDP);
+    if (mdpMemo) {
+      try {
+        const data = await dechiffrer(paquetGlobal, mdpMemo);
+        afficher(data);
+        return;
+      } catch (e) {
+        // Le mdp mémorisé ne marche plus (changement de mot de passe ?)
+        localStorage.removeItem(LS_KEY_MDP);
+        ouvrirModale("Mot de passe mémorisé invalide — re-saisis.");
+        return;
+      }
+    }
+    ouvrirModale();
+  }
+
+  document.getElementById("modale-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const mdp = document.getElementById("mdp").value;
+    const memoriser = document.getElementById("memoriser").checked;
+    tenterDechiffrement(mdp, memoriser);
+  });
+
+  document.getElementById("btn-recharger").addEventListener("click", () => {
+    init();
+  });
+
+  document.getElementById("btn-oublier").addEventListener("click", () => {
+    localStorage.removeItem(LS_KEY_MDP);
+    location.reload();
+  });
+
+  init();
+})();
+</script>
+  </body>
+</html>
