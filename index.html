@@ -93,7 +93,9 @@ h2 { font-size: 1rem; margin: 0 0 0.5rem; letter-spacing: 0.02em; }
   border: 1px solid var(--gris-bordure);
   border-radius: 4px;
   margin-bottom: 0.85rem;
-  overflow: hidden;
+  /* overflow-x auto pour autoriser un scroll horizontal de secours si la table
+     dépasse la largeur disponible (cas PRU élevés en écran étroit). */
+  overflow-x: auto;
 }
 .compte-card-header {
   display: flex;
@@ -125,7 +127,7 @@ table {
   font-size: 0.92rem;
 }
 th, td {
-  padding: 0.4rem 0.6rem;
+  padding: 0.4rem 0.45rem;
   text-align: left;
   border-bottom: 1px solid var(--gris-bordure);
 }
@@ -363,6 +365,15 @@ footer.bas-page {
     return `${signe}${entierFmt},${dec} €`;
   }
 
+  function fmtQuantite(valeur) {
+    if (valeur === null || valeur === undefined || valeur === "") return "—";
+    const n = Number(valeur);
+    if (Number.isNaN(n)) return String(valeur);
+    if (Number.isInteger(n)) return String(n);
+    // Décimal : virgule française, sans zéros morts
+    return n.toString().replace(/\.?0+$/, "").replace(".", ",");
+  }
+
   function fmtDate(iso) {
     if (!iso) return "";
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
@@ -445,7 +456,7 @@ footer.bas-page {
                          `<tr>
                             <td><code>${escapeHtml(p.ticker)}</code></td>
                             <td>${escapeHtml(p.nom)}</td>
-                            <td class="num">${escapeHtml(p.quantite)}</td>
+                            <td class="num">${fmtQuantite(p.quantite)}</td>
                             <td class="num">${
                               p.pru ? fmtEuros(p.pru) : "—"
                             }</td>
