@@ -6,6 +6,14 @@
     <meta name="theme-color" content="#000091">
     <meta name="robots" content="noindex, nofollow">
     <title>Suivi Portefeuille</title>
+
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon-180.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Portefeuille">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>:root {
   --bleu-france: #000091;
   --bleu-france-light: #6a6af4;
@@ -808,16 +816,26 @@ footer.bas-page {
 
   async function init() {
     document.getElementById("app").innerHTML = "<p>Chargement des données chiffrées…</p>";
+    // Le service worker (PWA) intercepte data.enc.json avec une stratégie
+    // network-first + fallback cache : on ne force PAS no-store ni le query string
+    // anti-cache, sinon le SW ne pourrait plus servir la version mise en cache
+    // en mode hors ligne.
     try {
-      const reponse = await fetch(URL_DATA + "?t=" + Date.now(), {
-        cache: "no-store",
-      });
+      const reponse = await fetch(URL_DATA);
       if (!reponse.ok) throw new Error("HTTP " + reponse.status);
       paquetGlobal = await reponse.json();
     } catch (e) {
       document.getElementById("app").innerHTML =
         `<p style="color:var(--rouge)">Impossible de charger les données : ${escapeHtml(e.message)}</p>`;
       return;
+    }
+
+    // Bandeau "hors ligne" si le navigateur est offline au moment du chargement.
+    if (!navigator.onLine) {
+      const indicateur = document.getElementById("genere-le");
+      if (indicateur) {
+        indicateur.innerHTML += ' <span style="color:#b34700">· 📡 mode hors ligne</span>';
+      }
     }
 
     const mdpMemo = localStorage.getItem(LS_KEY_MDP);
@@ -855,5 +873,15 @@ footer.bas-page {
   init();
 })();
 </script>
+    <script>
+      // Enregistrement du service worker (PWA v2.0)
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("sw.js")
+            .catch((e) => console.warn("Service worker non enregistré :", e));
+        });
+      }
+    </script>
   </body>
 </html>
