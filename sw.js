@@ -8,7 +8,7 @@
 // Le cache est versionné par CACHE_VERSION (à bumper à chaque publication
 // du HTML — sinon les vieilles versions traînent).
 
-const CACHE_VERSION = "v20260608-165948";
+const CACHE_VERSION = "v20260719-221221";
 const CACHE_SHELL = `bourse-shell-${CACHE_VERSION}`;
 const CACHE_DATA = `bourse-data-${CACHE_VERSION}`;
 
@@ -83,11 +83,15 @@ function networkFirstWithTimeout(request, cacheName, timeoutMs) {
     }, timeoutMs);
     fetch(request)
       .then((rep) => {
+        // TOUJOURS rafraîchir le cache avec la réponse réseau, même si le
+        // timeout a déjà servi une version en cache pour CETTE requête —
+        // sinon, sur connexion lente, le cache reste périmé indéfiniment
+        // (data.enc.json chiffré avec un ancien mot de passe → « incorrect »).
+        const copie = rep.clone();
+        caches.open(cacheName).then((c) => c.put(request, copie));
         if (resolu) return;
         resolu = true;
         clearTimeout(tFallback);
-        const copie = rep.clone();
-        caches.open(cacheName).then((c) => c.put(request, copie));
         resolve(rep);
       })
       .catch(() => {
