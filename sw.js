@@ -8,7 +8,7 @@
 // Le cache est versionné par CACHE_VERSION (à bumper à chaque publication
 // du HTML — sinon les vieilles versions traînent).
 
-const CACHE_VERSION = "v20260810-104805";
+const CACHE_VERSION = "v20260822-115045";
 const CACHE_SHELL = `bourse-shell-${CACHE_VERSION}`;
 const CACHE_DATA = `bourse-data-${CACHE_VERSION}`;
 
