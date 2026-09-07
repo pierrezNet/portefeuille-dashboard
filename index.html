@@ -163,6 +163,16 @@ code {
   margin-bottom: 0.85rem;
 }
 
+.equity-zoom { display: flex; gap: 0.4rem; margin: 0.1rem 0 0.6rem; }
+.equity-zoom-btn {
+  padding: 0.25rem 0.8rem; font-size: 0.85rem; cursor: pointer;
+  border: 1px solid var(--gris-bordure); background: #fff;
+  color: var(--gris-texte); border-radius: 4px; font-family: inherit;
+}
+.equity-zoom-btn.actif {
+  background: var(--bleu-france); color: #fff; border-color: var(--bleu-france);
+}
+
 .agenda { list-style: none; padding: 0; margin: 0; }
 .agenda li {
   display: grid;
@@ -527,7 +537,7 @@ footer.bas-page {
     return JSON.parse(texte);
   }
 
-  // --- Helpers de formatage (alignés sur dashboard_mobile.js) ---------------
+  // --- Helpers de formatage --------------------------------------------------
   function fmtEuros(valeur) {
     if (valeur === null || valeur === undefined || valeur === "") return "—";
     const n = Number(valeur);
@@ -580,7 +590,7 @@ footer.bas-page {
       .replace(/"/g, "&quot;");
   }
 
-  // --- Rendu (identique à dashboard_mobile.js) ------------------------------
+  // --- Rendu -----------------------------------------------------------------
   function renderBandeauActualisation(data) {
     if (!data.cours_a_actualiser) return "";
     const parts = [];
@@ -657,12 +667,14 @@ footer.bas-page {
       .join("");
   }
 
-  function renderEquity(data) {
-    const c = data.equity_coords;
-    const pts = data.equity_points || [];
-    if (!c || !c.chemin || pts.length < 2) return "";
+  // Rend les deux graphes (Valeur + Plus-values) pour un jeu de coordonnées
+  // donné. `suffixe` rend les id de dégradés uniques : les 3 vues de zoom
+  // coexistent (masquées) dans le DOM, des id partagés se télescoperaient.
+  function equityGraphes(c, pvc, pts, suffixe) {
     const couleur = c.hausse ? "#18753c" : "#ce0500";
     const couleurPv = c.bande_positive ? "#18753c" : "#ce0500";
+    const idPv = "pv-fill-" + suffixe;
+    const idReal = "realise-fill-" + suffixe;
 
     // --- Graphe 1 : Valeur du portefeuille (total, capital investi, bande PV) ---
     const marq1 = marqueursEquity(c, pts, couleur, (p) =>
@@ -673,13 +685,13 @@ footer.bas-page {
       <svg viewBox="0 0 ${c.largeur} ${c.hauteur}" xmlns="http://www.w3.org/2000/svg"
            style="width:100%;height:auto;max-height:220px;display:block">
         <defs>
-          <linearGradient id="pv-fill" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id="${idPv}" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="${couleurPv}" stop-opacity="0.28"/>
             <stop offset="100%" stop-color="${couleurPv}" stop-opacity="0.06"/>
           </linearGradient>
         </defs>
         <line x1="${c.marge}" y1="${c.hauteur - c.marge}" x2="${c.largeur - c.marge}" y2="${c.hauteur - c.marge}" stroke="#eee" stroke-width="1"/>
-        <path d="${c.bande}" fill="url(#pv-fill)" stroke="none"/>
+        <path d="${c.bande}" fill="url(#${idPv})" stroke="none"/>
         <path fill="none" stroke="#888" stroke-width="1.5" stroke-dasharray="4 3" stroke-linejoin="round" d="${c.chemin_base}"/>
         <path fill="none" stroke="${couleur}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" d="${c.chemin}"/>
         ${marq1}
@@ -695,7 +707,6 @@ footer.bas-page {
       </div>`;
 
     // --- Graphe 2 : Plus-values (latentes + réalisées = totales), échelle propre ---
-    const pvc = data.equity_pv_coords;
     let graphe2 = "";
     if (pvc && pvc.chemin && (pvc.points_xy || []).length >= 2) {
       const marq2 = marqueursEquity(pvc, pts, "#6e2782", (p) =>
@@ -707,13 +718,13 @@ footer.bas-page {
         <svg viewBox="0 0 ${pvc.largeur} ${pvc.hauteur}" xmlns="http://www.w3.org/2000/svg"
              style="width:100%;height:auto;max-height:190px;display:block">
           <defs>
-            <linearGradient id="realise-fill" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="${idReal}" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#b34700" stop-opacity="0.28"/>
               <stop offset="100%" stop-color="#b34700" stop-opacity="0.06"/>
             </linearGradient>
           </defs>
           <line x1="${pvc.marge}" y1="${pvc.hauteur - pvc.marge}" x2="${pvc.largeur - pvc.marge}" y2="${pvc.hauteur - pvc.marge}" stroke="#eee" stroke-width="1"/>
-          <path d="${pvc.bande}" fill="url(#realise-fill)" stroke="none"/>
+          <path d="${pvc.bande}" fill="url(#${idReal})" stroke="none"/>
           <path fill="none" stroke="#18753c" stroke-width="1.8" stroke-dasharray="5 3" stroke-linejoin="round" stroke-linecap="round" d="${pvc.chemin_base}"/>
           <path fill="none" stroke="#6e2782" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" d="${pvc.chemin}"/>
           ${marq2}
@@ -730,13 +741,69 @@ footer.bas-page {
     }
 
     return `
-      <section class="bloc bloc-equity">
+      <div class="muted" style="margin-bottom:0.5rem">${pts.length} relevés · de ${fmtEuros(c.premier)} à <strong>${fmtEuros(c.dernier)}</strong></div>
+      ${graphe1}
+      ${graphe2}`;
+  }
+
+  function renderEquity(data) {
+    const vues = data.equity_vues || null;
+    const libelles = [["tout", "Tout"], ["annee", "Année"], ["trimestre", "Trimestre"]];
+    const dispo = vues
+      ? libelles.filter(([cle]) => {
+          const v = vues[cle];
+          const n = v && (v.nb_points || (v.points || []).length);
+          return v && v.coords && v.coords.chemin && n >= 2;
+        })
+      : [];
+    // Repli : rendu à vue unique (héritée) si les vues de zoom sont absentes.
+    if (!dispo.length) {
+      const c = data.equity_coords;
+      const pts = data.equity_points || [];
+      if (!c || !c.chemin || pts.length < 2) return "";
+      return `
+        <section class="bloc bloc-equity">
+          <h2>📈 Évolution du portefeuille</h2>
+          ${equityGraphes(c, data.equity_pv_coords, pts, "u")}
+        </section>`;
+    }
+    // Vue active par défaut : Trimestre si disponible, sinon la plus zoomée.
+    const defaut = dispo.some(([cle]) => cle === "trimestre")
+      ? "trimestre"
+      : dispo[dispo.length - 1][0];
+    const boutons = dispo
+      .map(([cle, lib]) =>
+        `<button type="button" class="equity-zoom-btn${cle === defaut ? " actif" : ""}" data-vue="${cle}">${lib}</button>`)
+      .join("");
+    const panneaux = dispo
+      .map(([cle]) => {
+        const v = vues[cle];
+        return `<div class="equity-vue" data-vue="${cle}"${cle === defaut ? "" : " hidden"}>${equityGraphes(v.coords, v.pv_coords, v.points || [], cle)}</div>`;
+      })
+      .join("");
+    return `
+      <section class="bloc bloc-equity equity-wrap">
         <h2>📈 Évolution du portefeuille</h2>
-        <div class="muted" style="margin-bottom:0.5rem">${pts.length} relevés · de ${fmtEuros(c.premier)} à <strong>${fmtEuros(c.dernier)}</strong></div>
-        ${graphe1}
-        ${graphe2}
-      </section>
-    `;
+        <div class="equity-zoom">${boutons}</div>
+        ${panneaux}
+      </section>`;
+  }
+
+  function initEquityZoom() {
+    const app = document.getElementById("app");
+    if (!app) return;
+    app.addEventListener("click", function (e) {
+      const btn = e.target.closest(".equity-zoom-btn");
+      if (!btn) return;
+      const wrap = btn.closest(".equity-wrap");
+      if (!wrap) return;
+      const cible = btn.getAttribute("data-vue");
+      wrap.querySelectorAll(".equity-zoom-btn").forEach((b) =>
+        b.classList.toggle("actif", b === btn));
+      wrap.querySelectorAll(".equity-vue").forEach((v) => {
+        v.hidden = v.getAttribute("data-vue") !== cible;
+      });
+    });
   }
 
   function renderKpis(data) {
@@ -965,6 +1032,7 @@ footer.bas-page {
       renderPredictions(data) +
       renderAgenda(data) +
       renderWatchlist(data);
+    initEquityZoom();
   }
 
   // --- Flux principal -------------------------------------------------------
