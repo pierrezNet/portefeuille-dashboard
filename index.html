@@ -867,7 +867,7 @@ footer.bas-page {
                        <div class="position-kpis">
                          <div class="position-kpi"><span class="label">Qté</span><span class="valeur">${fmtQuantite(p.quantite)}</span></div>
                          <div class="position-kpi"><span class="label">PRU</span><span class="valeur">${p.pru ? fmtEuros(p.pru) : "—"}</span></div>
-                         <div class="position-kpi"><span class="label">Cours</span><span class="valeur">${p.cours_jour_eur ? fmtEuros(p.cours_jour_eur) : "—"}</span></div>
+                         <div class="position-kpi"><span class="label">Cours</span><span class="valeur">${p.cours_natif ? (p.cours_natif + " " + (p.cours_natif_devise === "EUR" ? "€" : escapeHtml(p.cours_natif_devise))) : (p.cours_jour_eur ? fmtEuros(p.cours_jour_eur) : "—")}</span></div>
                        </div>
                        <div class="position-footer">
                          <span>Valo <strong>${p.valo_eur != null ? fmtEuros(p.valo_eur) : "—"}</strong></span>
